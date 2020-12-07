@@ -9,12 +9,18 @@ int main(int argc, char * argv[])
     // 1. Read the input files.
     // 2. Ask the user for the chosen scheduling algorithm and its parameters, if there are any.
     // 3. Initiate and create the scheduler and clock processes.
-
+    int pid =fork();
+    if (pid==0){
+    char *binaryPath = "./clk.out";
+    char *args[] = {binaryPath,NULL} ;
+    execvp(binaryPath,args);   
+    }
+    
     // 4. Use this function after creating the clock process to initialize clock
     initClk();
     // To get time use this
-    int x = getClk();
-    sleep(1);
+    int x = getClk(); 
+
     printf("current time is %d\n", getClk());
     // TODO Generation Main Loop
     // 5. Create a data structure for processes and provide it with its parameters.

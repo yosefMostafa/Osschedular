@@ -19,9 +19,7 @@ void cleanup(int signum)
 
 /* This file represents the system clock for ease of calculations */
 int main(int argc, char * argv[])
-{
-     int pid =fork();
-    if(pid==0){
+{ 
     printf("Clock starting\n");
     signal(SIGINT, cleanup);
     int clk = 0;
@@ -44,6 +42,5 @@ int main(int argc, char * argv[])
     {
         sleep(1);
         (*shmaddr)++;
-    }
     }
 }
