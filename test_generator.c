@@ -22,6 +22,7 @@ int main(int argc, char * argv[])
     srand(time(null));
     //fprintf(pFile,"%d\n",no);
     fprintf(pFile, "#id arrival runtime priority\n");
+    fprintf(pFile,"%d\n",no);
     pData.arrivaltime = 1;
     for (int i = 1 ; i <= no ; i++)
     {
