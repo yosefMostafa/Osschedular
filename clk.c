@@ -36,11 +36,16 @@ int main(int argc, char * argv[])
         perror("Error in attaching the shm in clock!");
         exit(-1);
     }
-    *shmaddr = clk; /* initialize shared memory */
-   
+    *shmaddr = clk;
+        pthread_mutex_t count_mutex;
+ /* initialize shared memory */
     while (1)
     {
+        pthread_mutex_lock(&count_mutex);
         sleep(1);
         (*shmaddr)++;
+        printf("current time is %d\n", *shmaddr);
+      pthread_mutex_unlock(&count_mutex);
+
     }
 }

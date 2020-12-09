@@ -10,11 +10,16 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include<pthread.h>
+
+
 typedef short bool;
 #define true 1
 #define false 1
 
 #define SHKEY 300
+
+#define key 500
 
 struct processData
 {
@@ -23,9 +28,12 @@ struct processData
     int runningtime;
     int id;
 };
+
 ///==============================
 //don't mess with this variable//
 int * shmaddr;                 //
+struct processData * shmaddrqueue;                 //
+
 //===============================
 
 
@@ -34,7 +42,6 @@ int getClk()
 {
     return *shmaddr;
 }
-
 
 /*
  * All process call this function at the beginning to establish communication between them and the clock module.
@@ -54,6 +61,10 @@ void initClk()
 }
 
 
+struct processData * getqueuehead()
+{
+    return shmaddrqueue;
+}
 /*
  * All process call this function at the end to release the communication
  * resources between them and the clock module.
@@ -70,7 +81,16 @@ void destroyClk(bool terminateAll)
         killpg(getpgrp(), SIGINT);
     }
 }
-
+void destroyqueue(bool terminateAll,int no)
+{
+    for (int i=0;i<no;i++){
+    shmdt(shmaddrqueue+i);
+    }
+    if (terminateAll)
+    {
+        killpg(getpgrp(), SIGINT);
+    }
+}
 
 // Node 
 typedef struct node { 
@@ -147,3 +167,28 @@ int isEmpty(Node** head)
 { 
     return (*head) == NULL; 
 } 
+
+void initqueue()
+{
+    
+int shmid = shmget(key,10*sizeof(struct processData), 0666);
+    while((int) shmid==-1){
+        printf("Wait! The process not initialized yet!\n");
+        sleep(1);
+        shmid = shmget(key,10*sizeof(struct processData), 0666);
+    }
+   shmaddrqueue = (struct processData *)shmat(shmid, NULL, 0);
+    
+}
+/*void initClk()
+{
+    int shmid = shmget(SHKEY, 4, 0444);
+    while ((int)shmid == -1)
+    {
+        //Make sure that the clock exists
+        printf("Wait! The clock not initialized yet!\n");
+        sleep(1);
+        shmid = shmget(SHKEY, 4, 0444);
+    }
+    shmaddr = (int *) shmat(shmid, (void *)0, 0);
+}*/
