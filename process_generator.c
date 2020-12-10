@@ -4,12 +4,12 @@
 void clearResources(int);
 Node *ReadData(int *no);
 void IntiatClk();
-void IntialtSchedular(char algorithm,char *param,int no);
+void IntialtSchedular(char algorithm,char *param);
 char getalgorithm(char *param);
-void sendData(Node *ptr,int *no);
-void sendprocess(struct processData *shmaddr,struct processData *temp,int *counter);
-
-int shmid2;
+void sendData(Node *ptr);
+void sendprocess(struct processData *shmaddr,struct processData *temp);
+void initmsq();
+key_t msqid;
 
 int main(int argc, char * argv[])
 {
@@ -21,9 +21,9 @@ int main(int argc, char * argv[])
     char algorithm,param[4];
     algorithm=getalgorithm(param);
     // 3. Initiate and create the scheduler and clock processes.Done
-    IntialtSchedular(algorithm,param,numprocesses);
+    IntialtSchedular(algorithm,param);
     IntiatClk();
-    
+    initmsq();
     // 4. Use this function after creating the clock process to initialize clock
     initClk();
     // To get time use this
@@ -32,12 +32,18 @@ int main(int argc, char * argv[])
     // 5. Create a data structure for processes and provide it with its parameters.
     //Done in ReadData
     // 6. Send the information to the scheduler at the appropriate time.Needs To actual send of data
-    sendData(ptr,&numprocesses);
+    sendData(ptr);
+    sleep(60);
     // 7. Clear clock resources
-    destroyClk(true);
+    //destroyClk(true);
 }
 
-
+void initmsq(){
+    msqid = msgget(key,IPC_CREAT|0644);
+    if(msqid==-1){
+        printf("Faild to create message queue \n");
+    }
+}
 
 
 
@@ -49,12 +55,11 @@ void IntiatClk(){
     execvp(binaryPath,args);   
     }
 }
-void IntialtSchedular(char algorithm,char* param,int no){
+void IntialtSchedular(char algorithm,char* param){
      int pid =fork();
     if (pid==0){
-    char nupro=(char) no;
     char *binaryPath = "./scheduler.out";
-    char *args[] = {binaryPath,&algorithm,param,&nupro,NULL} ;
+    char *args[] = {binaryPath,&algorithm,param,NULL} ;
     execvp(binaryPath,args);   
     }
 }
@@ -113,49 +118,47 @@ Node *ReadData(int *no){
     printf("Data successfully read from file\n"); 
     return ptr;
 }
-void sendData(Node*ptr,int *no){
+void sendData(Node *ptr)
+{
     pthread_mutex_t count_mutex;
+    int clk;
     struct processData *temp;
-    int counter=0;
-    shmid2 = shmget(key, (*no)*sizeof(struct processData), IPC_CREAT | 0666); 
-    struct processData * shmaddr = (struct processData *)shmat(shmid2,NULL, 0);
-    int x;
-    temp=peek(&ptr);
-    while(ptr!=NULL){
+    struct msgbuff msg;
+    int send_val;
+    while(true)
+    {
     pthread_mutex_lock(&count_mutex);
+    temp=peek(&ptr);
+    clk=getClk();
     
-        //send int to algo or add it to shared 
-    /*printf("AT %d\n",temp->arrivaltime);  
-    printf("Clk %d\n",getClk());*/
-
-        x=getClk();
-        if(temp->arrivaltime==x){
-                    pop(&ptr);
-                    sendprocess(shmaddr,temp,&counter);
-         if(ptr!=NULL){
-                temp=peek(&ptr);
-        while(ptr!=NULL&&temp->arrivaltime==x){
-                    pop(&ptr);
-                    sendprocess(shmaddr,temp,&counter);
-                    temp=peek(&ptr);
-            }
+    while(temp->arrivaltime==clk)
+    {
+        msg.temp.id=temp->id;msg.temp.arrivaltime=temp->arrivaltime;msg.temp.priority=temp->priority;msg.temp.runningtime=temp->runningtime;
+        send_val = msgsnd(msqid, &msg, sizeof(msg.temp),!IPC_NOWAIT);
+        if(send_val == -1){
+            perror("Errror in send");
         }
-        }else{
-             temp=peek(&ptr);
-        }
-     pthread_mutex_unlock(&count_mutex);
+        printf("sent\n");
+        pop(&ptr);
+         if(!ptr){
+        break;
     }
-    
+        temp=peek(&ptr);
+    }
+     if(!ptr){
+        break;
+    }
+    pthread_mutex_unlock(&count_mutex);
+    }
 }
-void sendprocess(struct processData *shmaddr,struct processData *temp,int *counter){
+
+void sendprocess(struct processData *shmaddr,struct processData *temp){
             printf("sent %d\n",temp->id);
-            (shmaddr+*counter)->id=temp->id;(shmaddr+*counter)->arrivaltime=temp->arrivaltime;
-            (shmaddr+*counter)->priority=temp->priority;(shmaddr+*counter)->runningtime=temp->runningtime;
+            (shmaddr)->id=temp->id;(shmaddr)->arrivaltime=temp->arrivaltime;
+            (shmaddr)->priority=temp->priority;(shmaddr)->runningtime=temp->runningtime;
     //         for(int i=0;i<10;i++){
     // printf("process id %d\n",(shmaddr+i)->id);
     // }
-            *counter=*counter+1;
-
 }
 
 
@@ -163,7 +166,7 @@ void sendprocess(struct processData *shmaddr,struct processData *temp,int *count
 void clearResources(int signum)
 {
     //TODO Clears all resources in case of interruption
-    shmctl(shmid2, IPC_RMID, NULL);
-    printf("queue terminating!\n");
+    msgctl(msqid, IPC_RMID, (struct msqid_ds *) 0);
+    printf("shared memory terminating!\n");
     exit(0);
 }

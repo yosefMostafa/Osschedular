@@ -15,11 +15,13 @@
 
 typedef short bool;
 #define true 1
-#define false 1
+#define false 0
 
 #define SHKEY 300
-
+#define REMKEY 400
 #define key 500
+#define fin 9999
+
 
 struct processData
 {
@@ -28,14 +30,56 @@ struct processData
     int runningtime;
     int id;
 };
+struct msgbuff
+{
+    long mtype;
+    struct processData temp;
+};
+typedef enum{Running,Blocked,Finished,Ready}state;
+
+struct PCBElement {
+
+state state;
+int arrivaltime;
+int priority;
+int runningtime;
+int id;int remainingtime;
+int starttime;
+int finishedtime;
+int PID;
+int turnarround;
+int weightedturnaround;
+
+};
 
 ///==============================
 //don't mess with this variable//
 int * shmaddr;                 //
-struct processData * shmaddrqueue;                 //
+struct processData * shmaddrqueue;   
+int *remainingshmaddr;              //
 
 //===============================
 
+int getremaining()
+{
+    return *remainingshmaddr;
+}
+void setremaining(int value)
+{
+ *remainingshmaddr=value;
+}
+void initremaining()
+{
+    int shmid = shmget(REMKEY, 4, 0444);
+    while ((int)shmid == -1)
+    {
+        //Make sure that the clock exists
+        printf("Wait! The remainig memory is not initialized yet!\n");
+        sleep(1);
+        shmid = shmget(REMKEY, 4, 0444);
+    }
+    remainingshmaddr = (int *) shmat(shmid, (void *)0, 0);
+}
 
 
 int getClk()
@@ -81,11 +125,17 @@ void destroyClk(bool terminateAll)
         killpg(getpgrp(), SIGINT);
     }
 }
-void destroyqueue(bool terminateAll,int no)
+void destroyREm(bool terminateAll)
 {
-    for (int i=0;i<no;i++){
-    shmdt(shmaddrqueue+i);
+    shmdt(remainingshmaddr);
+    if (terminateAll)
+    {
+        killpg(getpgrp(), SIGINT);
     }
+}
+void destroyshmaddr(bool terminateAll)
+{
+    shmdt(shmaddrqueue);
     if (terminateAll)
     {
         killpg(getpgrp(), SIGINT);
@@ -167,21 +217,142 @@ int isEmpty(Node** head)
 { 
     return (*head) == NULL; 
 } 
-
+////////////////////////////////////////////
+typedef struct nodePCB { 
+    struct PCBElement *data; 
+  
+    // Lower values indicate higher priority 
+    int priority; 
+  
+    struct nodePCB* next; 
+  
+} NodePCB; 
+  
+// Function to Create A New Node 
+NodePCB* newNodePCB(struct PCBElement *d, int p) 
+{ 
+    NodePCB* temp = (NodePCB*)malloc(sizeof(NodePCB)); 
+    temp->data = d; 
+    temp->priority = p; 
+    temp->next = NULL; 
+  
+    return temp; 
+} 
+  
+// Return the value at head 
+struct PCBElement  *peekPCB(NodePCB** head) 
+{ 
+    return (*head)->data; 
+} 
+  
+// Removes the element with the 
+// highest priority form the list 
+void popPCB(NodePCB** head) 
+{ 
+    NodePCB* temp = *head; 
+    (*head) = (*head)->next; 
+    temp=NULL;
+    free(temp);
+} 
+  
+// Function to push according to priority 
+void pushPCB(NodePCB** head,struct PCBElement  *d, int p) 
+{ 
+    if(!(*head)){
+               (*head)=newNodePCB(d,d->runningtime); 
+               return;
+    }
+    NodePCB* start = (*head); 
+  
+    // Create new Node 
+    NodePCB* temp = newNodePCB(d, p); 
+  
+    // Special Case: The head of list has lesser 
+    // priority than new node. So insert new 
+    // node before head node and change head node. 
+    if ((*head)->priority > p) { 
+  
+        // Insert New Node before head 
+        temp->next = *head; 
+        (*head) = temp; 
+    } 
+    else { 
+  
+        // Traverse the list and find a 
+        // position to insert new node 
+        while (start->next != NULL && 
+               start->next->priority < p) { 
+            start = start->next; 
+        } 
+  
+        // Either at the ends of the list 
+        // or at required position 
+        temp->next = start->next; 
+        start->next = temp; 
+    } 
+} 
+  
+// Function to check is list is empty 
+int isEmptyPCB(NodePCB** head) 
+{ 
+    return (*head) == NULL; 
+} 
+//////////////////////////
 void initqueue()
 {
     
-int shmid = shmget(key,10*sizeof(struct processData), 0666);
+int shmid = shmget(key,sizeof(struct processData), 0666);
     while((int) shmid==-1){
         printf("Wait! The process not initialized yet!\n");
         sleep(1);
-        shmid = shmget(key,10*sizeof(struct processData), 0666);
+        shmid = shmget(key,sizeof(struct processData), 0666);
     }
    shmaddrqueue = (struct processData *)shmat(shmid, NULL, 0);
     
 }
-/*void initClk()
-{
+// typedef struct nodelinked { 
+//     struct PCBElement *element; 
+  
+//     // Lower values indicate higher priority 
+  
+//     struct node* next; 
+  
+// } NodeLinked; 
+// NodeLinked* newNode(struct PCBElement *data) 
+// { 
+//     NodeLinked* temp = (NodeLinked*)malloc(sizeof(NodeLinked)); 
+//     temp->data = data; 
+//     temp->next = NULL; 
+//     return temp; 
+// } 
+// void pushLinked(NodeLinked **head,struct PCBElement *data){
+//     NodeLinked* temp = (NodeLinked*)malloc(sizeof(NodeLinked)); 
+//     Node* temphead = (*head);    
+//      while(temphead){
+//         if(!(temphead->next)){
+//                 temp->data = data; 
+//                 temp->next = NULL; 
+//                 temphead->next=temp;
+//             break;
+//         }
+//         temphead=temphead->next;
+//     }
+
+// }
+// void swap(NodeLinked **head,struct processData *ptr)
+// {
+//     NodeLinked *temphead=(*head);
+//     while(temphead){
+//         if(temphead->element->data->id==ptr->id){
+//             NodeLinked* temp = (NodeLinked*)malloc(sizeof(NodeLinked)); 
+//             temp=(*head);
+//             temphead=head
+//         }
+//     }
+
+// }
+    /*void initClk()
+
     int shmid = shmget(SHKEY, 4, 0444);
     while ((int)shmid == -1)
     {
