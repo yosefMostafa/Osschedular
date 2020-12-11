@@ -18,10 +18,10 @@ int main(int argc, char * argv[])
     int numprocesses;
     Node *ptr= ReadData(&numprocesses);
     // 2. Ask the user for the chosen scheduling algorithm and its parameters, if there are any.Done
-    char algorithm,param[4];
-    algorithm=getalgorithm(param);
+    char algorithm,param;
+    algorithm=getalgorithm(&param);
     // 3. Initiate and create the scheduler and clock processes.Done
-    IntialtSchedular(algorithm,param);
+    IntialtSchedular(algorithm,&param);
     IntiatClk();
     initmsq();
     // 4. Use this function after creating the clock process to initialize clock
@@ -39,7 +39,7 @@ int main(int argc, char * argv[])
 }
 
 void initmsq(){
-    msqid = msgget(key,IPC_CREAT|0644);
+    msqid = msgget(key1,IPC_CREAT|0644);
     if(msqid==-1){
         printf("Faild to create message queue \n");
     }
@@ -73,10 +73,12 @@ char getalgorithm(char *param){
     scanf("%s", &algo);
     if(algo=='0'){
         printf("Please enter the Switch parameter\n");
-        scanf("%s", param);
+        int temp;
+        scanf("%d", &temp);
+        *param=(char)temp;
         return algo;
     }
-    param[0]='0';
+    *param=(char)0;
     return algo;
 }
 
@@ -134,7 +136,13 @@ void sendData(Node *ptr)
     while(temp->arrivaltime==clk)
     {
         msg.temp.id=temp->id;msg.temp.arrivaltime=temp->arrivaltime;msg.temp.priority=temp->priority;msg.temp.runningtime=temp->runningtime;
-        send_val = msgsnd(msqid, &msg, sizeof(msg.temp),!IPC_NOWAIT);
+        if(ptr->next){
+            msg.mtype=2;
+        }
+        else{
+            msg.mtype=1;
+        }
+        send_val = msgsnd(msqid, &msg, sizeof(msg),!IPC_NOWAIT);
         if(send_val == -1){
             perror("Errror in send");
         }
