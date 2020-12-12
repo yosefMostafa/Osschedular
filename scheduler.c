@@ -15,10 +15,10 @@ char *getstate(int x);
 
 key_t msgqid;
 int shmid3;
-int shmid4;
+// int shmid4;
 int * shmaddrrem;
 char param;
-int *PIDshmaddr;
+// int *PIDshmaddr;
 FILE *fptr;
 long flag=0;
 
@@ -102,8 +102,8 @@ void initmsq(){
     if(msgqid==-1){
         printf("Faild to create message queue %d\n",msgqid);
     }
-        shmid4 = shmget(PIDKEY, 8, IPC_CREAT | 0644);
-    PIDshmaddr= (int *) shmat(shmid4, (void *)0, 0);
+        // shmid4 = shmget(PIDKEY, 8, IPC_CREAT | 0644);
+    // PIDshmaddr= (int *) shmat(shmid4, (void *)0, 0);
 
 }
 bool recieve(struct processData *ptr,struct msgbuff msg)
@@ -134,7 +134,7 @@ void addtoSJFqueue(struct processData *ptr,NodePCB **head,struct msgbuff msg){
 void addtoRRobinQueue(struct processData *ptr,NodePCB **head,struct msgbuff msg)
 {
        struct PCBElement *temp=copystruct(ptr,NULL);
-       temp->turn=0;;
+       temp->turn=0;
        pushPCB(head,temp,temp->turn);
        printf("Turn %d \n",(*head)->data->id);
     if(recieve(ptr,msg))
@@ -164,7 +164,7 @@ struct PCBElement * copystruct(struct processData *ptr,NodePCB **head)
 void SJF(NodePCB **head, NodePCB **Fin){   
     if(!((*head)==NULL)){
         //
-    printf("Running %d\n",(*head)->data->runningtime);
+    printf("Running %d\n",(*head)->data->id);
     int status;
     *shmaddrrem=(*head)->data->runningtime;
     (*head)->data->starttime=getClk();
@@ -269,7 +269,7 @@ void clearResources(int signum)
 
     //TODO Clears all resources in case of interruption
     shmctl(shmid3, IPC_RMID, NULL);
-    shmctl(shmid4, IPC_RMID, NULL);
+    //shmctl(shmid4, IPC_RMID, NULL);
     printf("shared memory terminating!\n");
     exit(0);
 }
@@ -277,7 +277,7 @@ char * getstate(int x){
     switch(x){
         case 0:return "Started";
         case 1:return "Stopped";
-        case 2:return "Finished";
+        case 2:return "Finishd";
         case 3:return "Resumed";
     }
 }

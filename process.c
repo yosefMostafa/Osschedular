@@ -21,19 +21,16 @@ int main(int agrc, char * argv[])
         pthread_mutex_lock(&count_mutex);
         if(quantum!=0){
             if(startremainingtime-quantum==remainingtime){
+                startremainingtime=remainingtime;
                 kill(getppid(),SIGCONT);
                 raise(SIGSTOP);
-            }else{
-                sleep(1);
-        remainingtime = remainingtime-1;
-        setremaining(remainingtime);
             }
-        }else{
-         sleep(1);
+        }
+        sleep(1);
         remainingtime = remainingtime-1;
         setremaining(remainingtime);
-         printf("remaining time %d\n",remainingtime);
-        }
+       // printf("remaining time %d\n",remainingtime);
+        
        
         pthread_mutex_unlock(&count_mutex);
     }

@@ -33,8 +33,9 @@ int main(int argc, char * argv[])
     //Done in ReadData
     // 6. Send the information to the scheduler at the appropriate time.Needs To actual send of data
     sendData(ptr);
-    sleep(60);
+    freequeue(&ptr);
     // 7. Clear clock resources
+    int pid = wait(NULL);
     //destroyClk(true);
 }
 
