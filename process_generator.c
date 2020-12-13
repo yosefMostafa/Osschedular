@@ -11,9 +11,14 @@ void sendprocess(struct processData *shmaddr,struct processData *temp);
 void initmsq();
 key_t msqid;
 
+
+int PIDsh;
+int valueofalgo;
+
 int main(int argc, char * argv[])
 {
     signal(SIGINT, clearResources);
+    signal (SIGCONT, SIG_DFL);
     // 1. Read the input files.//Done
     int numprocesses;
     Node *ptr= ReadData(&numprocesses);
@@ -21,9 +26,9 @@ int main(int argc, char * argv[])
     char algorithm,param;
     algorithm=getalgorithm(&param);
     // 3. Initiate and create the scheduler and clock processes.Done
+    initmsq();
     IntialtSchedular(algorithm,&param);
     IntiatClk();
-    initmsq();
     // 4. Use this function after creating the clock process to initialize clock
     initClk();
     // To get time use this
@@ -36,7 +41,7 @@ int main(int argc, char * argv[])
     freequeue(&ptr);
     // 7. Clear clock resources
     int pid = wait(NULL);
-    //destroyClk(true);
+    destroyClk(true);
 }
 
 void initmsq(){
@@ -63,6 +68,7 @@ void IntialtSchedular(char algorithm,char* param){
     char *args[] = {binaryPath,&algorithm,param,NULL} ;
     execvp(binaryPath,args);   
     }
+    PIDsh=pid;
 }
 char getalgorithm(char *param){
     char algo;
@@ -80,6 +86,7 @@ char getalgorithm(char *param){
         return algo;
     }
     *param=(char)0;
+    valueofalgo=(int)algo;
     return algo;
 }
 
@@ -148,6 +155,9 @@ void sendData(Node *ptr)
             perror("Errror in send");
         }
         printf("sent\n");
+         if(valueofalgo==(int)*"2"){
+            kill(PIDsh,SIGCONT);
+        }
         pop(&ptr);
          if(!ptr){
         break;

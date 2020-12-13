@@ -16,6 +16,7 @@ int main(int agrc, char * argv[])
     remainingtime = getremaining();
     int startremainingtime=remainingtime;
     int quantum=(int)*argv[1];
+    int algo=(int)*argv[2];
     while (remainingtime > 0)
     {
         pthread_mutex_lock(&count_mutex);
@@ -29,12 +30,14 @@ int main(int agrc, char * argv[])
         sleep(1);
         remainingtime = remainingtime-1;
         setremaining(remainingtime);
-       // printf("remaining time %d\n",remainingtime);
-        
-       
+       // printf("remaining time %d\n",remainingtime);   
         pthread_mutex_unlock(&count_mutex);
     }
     //destroyClk(false);
+    if(algo==(int)*"2")
+    {
+        kill(getppid(),SIGCONT);
+    }
     exit(2);
     return 0;
 }

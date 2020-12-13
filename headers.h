@@ -58,32 +58,10 @@ int waitingtime;
 ///==============================
 //don't mess with this variable//
 int * shmaddr;                 //
-struct processData * shmaddrqueue;   
+struct processData * shmaddrqueue;   //
 int *remainingshmaddr;   
-int *PIDshared;           //
+/////////////////////////////
 
-//===============================
-
-int getPID()
-{
-    return *remainingshmaddr;
-}
-void setPID(int value)
-{
- *PIDshared=value;
-}
-void initPID()
-{
-    int shmid = shmget(PIDKEY, 8, 0444);
-    while ((int)shmid == -1)
-    {
-        //Make sure that the clock exists
-        printf("Wait! The remainig memory is not initialized yet!\n");
-        sleep(1);
-        shmid = shmget(PIDKEY, 8, 0444);
-    }
-    PIDshared = (int *) shmat(shmid, (void *)0, 0);
-}
 int getremaining()
 {
     return *remainingshmaddr;
