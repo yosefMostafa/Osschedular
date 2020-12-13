@@ -7,7 +7,6 @@ void IntiatClk();
 void IntialtSchedular(char algorithm,char *param);
 char getalgorithm(char *param);
 void sendData(Node *ptr);
-void sendprocess(struct processData *shmaddr,struct processData *temp);
 void initmsq();
 key_t msqid;
 
@@ -170,17 +169,6 @@ void sendData(Node *ptr)
     pthread_mutex_unlock(&count_mutex);
     }
 }
-
-void sendprocess(struct processData *shmaddr,struct processData *temp){
-            printf("sent %d\n",temp->id);
-            (shmaddr)->id=temp->id;(shmaddr)->arrivaltime=temp->arrivaltime;
-            (shmaddr)->priority=temp->priority;(shmaddr)->runningtime=temp->runningtime;
-    //         for(int i=0;i<10;i++){
-    // printf("process id %d\n",(shmaddr+i)->id);
-    // }
-}
-
-
 
 void clearResources(int signum)
 {

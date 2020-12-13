@@ -99,7 +99,6 @@ int main(int argc, char * argv[])
     //upon termination release the clock resources
     freePCB(&Fin);
     destroyREm(true);
-   // destroyshmaddr(true);
     destroyClk(true);
 }
 void initmsq(){
