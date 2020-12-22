@@ -5,8 +5,10 @@ void clearResources(int signum);
 void addtoSJFqueue(struct processData *ptr,NodePCB **head,struct msgbuff msg);
 void addtoRRobinQueue(struct processData *ptr,NodePCB **head,struct msgbuff msg);
 void addtoPHPFqueue(struct processData *ptr,NodePCB **head,struct msgbuff msg);
+void addtoSRTNQueue(struct processData *ptr,NodePCB **head,struct msgbuff msg);
 struct PCBElement * copystruct(struct processData *ptr,NodePCB **head);
 void SJF(NodePCB **head, NodePCB **Fin);
+void SRTN(NodePCB **head, NodePCB **Fin);
 void RRalgo(NodePCB **head,NodePCB **Fin);
 void PHPF(NodePCB **head, NodePCB **Fin);
 void Intializeprocess(NodePCB **head);
@@ -26,6 +28,7 @@ char algorithm;
 FILE *fptr;
 long flag=0;
 struct PCBElement *Runningprocess=NULL;
+struct PCBElement *tempSRTN=NULL;
 
 int main(int argc, char * argv[])
 {
@@ -61,6 +64,8 @@ int main(int argc, char * argv[])
             else if(algo==(int)*"1")
             {
             addtoSJFqueue(temp,&head,msg);
+            }else if(algo==(int)*"2"){
+            addtoSRTNQueue(temp,&head,msg);
             }
             else
             {
@@ -79,7 +84,10 @@ int main(int argc, char * argv[])
             {
             SJF(&head,&Fin);
             }
-        else
+        else if(algo==(int)*"2")
+        {
+            SRTN(&head,&Fin);
+        }else
             {
             PHPF(&head,&Fin);
             }
@@ -154,6 +162,18 @@ void addtoRRobinQueue(struct processData *ptr,NodePCB **head,struct msgbuff msg)
         addtoSJFqueue(ptr,head,msg);
     }    
 }
+void addtoSRTNQueue(struct processData *ptr,NodePCB **head,struct msgbuff msg)
+{
+ struct PCBElement *temp=copystruct(ptr,NULL);
+       temp->remainingtime=temp->runningtime;
+       pushPCB(head,temp,temp->remainingtime);
+       printf("Turn %d \n",(*head)->data->id);
+    if(recieve(ptr,msg))
+    {
+        addtoSJFqueue(ptr,head,msg);
+    }    
+}
+
 struct PCBElement * copystruct(struct processData *ptr,NodePCB **head)
 {
     if(!head){
@@ -317,6 +337,78 @@ void PHPF(NodePCB **head, NodePCB **Fin)
             Runningprocess=NULL;
         }   
     }
+}
+void SRTN(NodePCB **head, NodePCB **Fin)
+{
+        if(!((*head)==NULL))
+        {
+            if(!Runningprocess)
+            {
+                printf("Running %d\n",(*head)->data->id);
+                *shmaddrrem=(*head)->data->remainingtime;
+                if((*head)->data->state==Blocked)
+                    {
+                        (*head)->data->state=Ready;
+                        kill((*head)->data->PID,SIGCONT);
+                    }
+                    else
+                    {
+                printf("Running %d\n",(*head)->data->id);
+                *shmaddrrem=(*head)->data->remainingtime;
+                (*head)->data->starttime=getClk();
+                (*head)->data->state=Running;
+                Intializeprocess(head);
+                    }
+                Runningprocess=copystruct(NULL,head);
+                fprintf(fptr, "At\tTime\t%d\tprocess\t%d\t%s\tArr\t%d\ttotal\t%d\tremain\t%d\twait\t%d\n",getClk(),Runningprocess->id,getstate(Runningprocess->state),Runningprocess->arrivaltime,Runningprocess->runningtime,Runningprocess->remainingtime,Runningprocess->waitingtime); 
+                // tempSRTN=copystruct(NULL,head);
+                popPCB(head);
+                raise(SIGSTOP);
+            }
+            else if((*head)->data->id!=Runningprocess->id)
+            {
+                Runningprocess->remainingtime=*shmaddrrem;
+                // tempSRTN->remainingtime=*shmaddrrem;
+                if((*head)->data->remainingtime<Runningprocess->remainingtime)
+                {
+                    kill(Runningprocess->PID,SIGSTOP);
+                    printf("Blocked %d\n",Runningprocess->id);
+                    Runningprocess->state=Blocked;
+                    pushPCB(head,Runningprocess,Runningprocess->remainingtime);
+                    if((*head)->data->state==Blocked)
+                    {
+                        (*head)->data->state=Ready;
+                        kill((*head)->data->PID,SIGCONT);
+                    }
+                    else
+                    {
+                printf("Running %d\n",(*head)->data->id);
+                *shmaddrrem=(*head)->data->remainingtime;
+                (*head)->data->starttime=getClk();
+                (*head)->data->state=Running;
+                Intializeprocess(head);
+                    }
+                    Runningprocess=copystruct(NULL,head);
+                    // tempSRTN=copystruct(NULL,head);
+fprintf(fptr, "At\tTime\t%d\tprocess\t%d\t%s\tArr\t%d\ttotal\t%d\tremain\t%d\twait\t%d\n",getClk(),Runningprocess->id,getstate(Runningprocess->state),Runningprocess->arrivaltime,Runningprocess->runningtime,Runningprocess->remainingtime,Runningprocess->waitingtime); 
+                    popPCB(head);
+                }
+                    raise(SIGSTOP);
+            }
+             if(*shmaddrrem==0){
+            //finished data
+            printf("Finished %d\n",Runningprocess->id);
+            Runningprocess->finishedtime=getClk();
+            Runningprocess->turnarround=Runningprocess->finishedtime-Runningprocess->arrivaltime;
+            Runningprocess->weightedturnaround=Runningprocess->turnarround/Runningprocess->runningtime;  
+            Runningprocess->state=Finished;Runningprocess->remainingtime=0;
+            pushPCB(Fin,Runningprocess,Runningprocess->arrivaltime);
+            fprintf(fptr, "At\tTime\t%d\tprocess\t%d\t%s\tArr\t%d\ttotal\t%d\tremain\t%d\twait\t%d\tTA\t%.2f\tWTA\t%.2f\n",getClk(),Runningprocess->id,getstate(Runningprocess->state),Runningprocess->arrivaltime,Runningprocess->runningtime,Runningprocess->remainingtime,Runningprocess->waitingtime,Runningprocess->turnarround,Runningprocess->weightedturnaround); 
+            Runningprocess=NULL;
+        }   
+           
+
+        }
 }
 void Intializeprocess(NodePCB **head){
     int pid =fork();

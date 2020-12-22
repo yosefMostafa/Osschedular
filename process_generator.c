@@ -74,7 +74,8 @@ char getalgorithm(char *param){
     printf("Please enter the name of schedular algotithm: \n");
     printf("0)Round Robin\n");
     printf("1)Shortest Jop first\n");
-    printf("2)Premitive\n");
+    printf("2)Shortest Remaining Time First\n");
+    printf("3)Premitive\n");
     printf("Enter number of algorithm\n");
     scanf("%s", &algo);
     if(algo=='0'){
@@ -154,7 +155,7 @@ void sendData(Node *ptr)
             perror("Errror in send");
         }
         printf("sent\n");
-         if(valueofalgo==(int)*"2"){
+         if(valueofalgo==(int)*"2"||valueofalgo==(int)*"3"){
             kill(PIDsh,SIGCONT);
         }
         pop(&ptr);

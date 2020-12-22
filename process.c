@@ -34,7 +34,7 @@ int main(int agrc, char * argv[])
         pthread_mutex_unlock(&count_mutex);
     }
     //destroyClk(false);
-    if(algo==(int)*"2")
+    if(algo==(int)*"2"||algo==(int)*"3")
     {
         kill(getppid(),SIGCONT);
     }
