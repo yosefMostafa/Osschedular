@@ -226,7 +226,7 @@ struct PCBElement * copystruct(struct processData *ptr,NodePCB **head)
     temp->waitingtime=(*head)->data->starttime-(*head)->data->arrivaltime;
     temp->memorypair.start=(*head)->data->memorypair.start;
     temp->memorypair.end=(*head)->data->memorypair.end;
-
+    temp->memorysize=(*head)->data->memorysize;
     return temp;
     }
 }
@@ -385,6 +385,7 @@ void PHPF(NodePCB **head, NodePCB **Fin)
             pushPCB(Fin,(*head)->data,(*head)->data->arrivaltime);
             fprintf(fptr, "At\tTime\t%d\tprocess\t%d\t%s\tArr\t%d\ttotal\t%d\tremain\t%d\twait\t%d\tTA\t%.2f\tWTA\t%.2f\n",getClk(),(*head)->data->id,getstate((*head)->data->state),(*head)->data->arrivaltime,(*head)->data->runningtime,(*head)->data->remainingtime,(*head)->data->waitingtime,(*head)->data->turnarround,(*head)->data->weightedturnaround); 
             clearRam(&(*head)->data->memorypair);
+            
             fprintf(fptrMemory,  "At\tTime\t%d\tfreed   \t%d\tbytes\tfor\tprocess\t%d\tfrom\t%d\tto\t%d\n",getClk(),(*head)->data->memorysize,(*head)->data->id,(*head)->data->memorypair.start,(*head)->data->memorypair.end); 
             popPCB(head);
             Runningprocess=NULL;
@@ -452,7 +453,7 @@ fprintf(fptr, "At\tTime\t%d\tprocess\t%d\t%s\tArr\t%d\ttotal\t%d\tremain\t%d\twa
             //finished data
             printf("Finished %d\n",Runningprocess->id);
             clearRam(&Runningprocess->memorypair);
-            fprintf(fptrMemory,  "At\tTime\t%d\tallocated\t%d\tbytes\tfor\tprocess\t%d\tfrom\t%d\tto\t%d\n",getClk(),Runningprocess->memorysize,Runningprocess->id,Runningprocess->memorypair.start,Runningprocess->memorypair.end); 
+            fprintf(fptrMemory,  "At\tTime\t%d\tfreed\t%d\tbytes\tfor\tprocess\t%d\tfrom\t%d\tto\t%d\n",getClk(),Runningprocess->memorysize,Runningprocess->id,Runningprocess->memorypair.start,Runningprocess->memorypair.end); 
             Runningprocess->finishedtime=getClk();
             Runningprocess->turnarround=Runningprocess->finishedtime-Runningprocess->arrivaltime;
             Runningprocess->weightedturnaround=Runningprocess->turnarround/Runningprocess->runningtime;  

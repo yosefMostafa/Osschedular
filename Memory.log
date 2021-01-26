@@ -1,9 +1,9 @@
 At	Time	x	allocated	y	bytes	for	process	w	from	z	to	y
-At	Time	5	allocated	47	bytes	for	process	1	from	0	to	63
-At	Time	7	allocated	110	bytes	for	process	2	from	128	to	255
-At	Time	9	allocated	187	bytes	for	process	3	from	256	to	511
-At	Time	11	allocated	48	bytes	for	process	4	from	64	to	127
-At	Time	31	freed	0	bytes	for	process	3	from	256	to	511
-At	Time	59	freed	0	bytes	for	process	2	from	128	to	255
-At	Time	68	freed	0	bytes	for	process	4	from	64	to	127
-At	Time	70	freed	0	bytes	for	process	1	from	0	to	63
+At	Time	7	allocated	100	bytes	for	process	1	from	0	to	127
+At	Time	26	allocated	72	bytes	for	process	4	from	128	to	255
+At	Time	36	freed   	72	bytes	for	process	4	from	128	to	255
+At	Time	37	freed   	100	bytes	for	process	1	from	0	to	127
+At	Time	37	allocated	118	bytes	for	process	3	from	0	to	127
+At	Time	61	freed   	118	bytes	for	process	3	from	0	to	127
+At	Time	61	allocated	253	bytes	for	process	2	from	0	to	255
+At	Time	63	freed   	253	bytes	for	process	2	from	0	to	255
