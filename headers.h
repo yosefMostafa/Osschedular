@@ -19,7 +19,7 @@ typedef short bool;
 
 #define SHKEY 300
 #define REMKEY 400
-#define key1 500
+#define key1 1000
 #define fin 999
 #define PIDKEY 100
 
@@ -30,16 +30,23 @@ struct processData
     int priority;
     int runningtime;
     int id;
+    int memorysize;
 };
+
 struct msgbuff
 {
     long mtype;
     struct processData temp;
 };
+
+struct mempair
+{
+    int start;
+    int end;
+};
 typedef enum{Running,Blocked,Finished,Ready}state;
 
 struct PCBElement {
-
 state state;
 int arrivaltime;
 int priority;
@@ -53,6 +60,8 @@ double turnarround;
 double weightedturnaround;
 int turn;
 int waitingtime;
+int memorysize;
+struct mempair memorypair;
 };
 
 ///==============================
@@ -254,7 +263,7 @@ void popPCB(NodePCB** head)
 void pushPCB(NodePCB** head,struct PCBElement  *d, int p) 
 { 
     if(!(*head)){
-               (*head)=newNodePCB(d,p); 
+            (*head)=newNodePCB(d,p); 
             return;
     }
     NodePCB* start = (*head); 
@@ -301,6 +310,7 @@ void freePCB(NodePCB **head){
         free(temp);
     }
 }
+
 //////////////////////////
 // typedef struct nodelinked { 
 //     struct PCBElement *element; 

@@ -32,14 +32,18 @@ int main(int argc, char * argv[])
     initClk();
     // To get time use this
     int x = getClk(); 
-    printf("current time is %d\n", getClk());
+    printf("current time is %d\n", x);
     // 5. Create a data structure for processes and provide it with its parameters.
     //Done in ReadData
     // 6. Send the information to the scheduler at the appropriate time.Needs To actual send of data
     sendData(ptr);
     freequeue(&ptr);
+
+
     // 7. Clear clock resources
-    int pid = wait(NULL);
+    wait(NULL);
+
+
     destroyClk(true);
 }
 
@@ -93,11 +97,18 @@ char getalgorithm(char *param){
 Node *ReadData(int *no){
     FILE *file;
     Node *ptr;
-    char filename;
+    char *filename=NULL;
     char dataToBeRead[50]; 
+    int way;
+    printf("Enter way to open file ");
+    scanf("%d", &way);
+    if(way==1){
+        filename="processes.txt";
+    }else{
     printf("Please enter the name of processes you want to generate: ");
-    scanf("%s", &filename);
-    file=fopen(&filename,"r");
+    scanf("%s", filename);
+    }
+    file=fopen(filename,"r");
      if ( file == NULL ) 
     { 
         printf("file failed to open." ) ; 
@@ -107,15 +118,17 @@ Node *ReadData(int *no){
         printf("The file is now opened.\n") ; 
         //getting the headers
         fgets(dataToBeRead,50,file);
-        
+        printf("%s",dataToBeRead);
         struct processData *temp;
         fscanf ( file, "%d",no ) ;
+        printf("%d\n",*no);
         temp = (struct processData *)malloc((*no)*sizeof(struct processData));
             for(int i=0;i<(*no);i++){
                 fscanf ( file, "%d", &(temp+i)->id);
                 fscanf ( file, "%d", &(temp+i)->arrivaltime );
                 fscanf ( file, "%d", &(temp+i)->runningtime );
                 fscanf ( file, "%d", &(temp+i)->priority );
+                fscanf ( file, "%d", &(temp+i)->memorysize );
                 if(i==0){
                     ptr=newNode(temp+i,(temp+i)->arrivaltime);
                 }else{
@@ -123,9 +136,10 @@ Node *ReadData(int *no){
                     }
             }
             
-            fclose(file) ;          
+            fclose(file) ; 
+             printf("Data successfully read from file\n");          
     } 
-    printf("Data successfully read from file\n"); 
+   
     return ptr;
 }
 void sendData(Node *ptr)
@@ -143,14 +157,19 @@ void sendData(Node *ptr)
     
     while(temp->arrivaltime==clk)
     {
-        msg.temp.id=temp->id;msg.temp.arrivaltime=temp->arrivaltime;msg.temp.priority=temp->priority;msg.temp.runningtime=temp->runningtime;
+        msg.temp.id=temp->id;
+        msg.temp.arrivaltime=temp->arrivaltime;
+        msg.temp.priority=temp->priority;
+        msg.temp.runningtime=temp->runningtime;
+        msg.temp.memorysize=temp->memorysize;
         if(ptr->next){
             msg.mtype=2;
         }
         else{
             msg.mtype=1;
         }
-        send_val = msgsnd(msqid, &msg, sizeof(msg),!IPC_NOWAIT);
+        send_val = msgsnd(msqid, &msg, sizeof(msg),IPC_NOWAIT);
+        // printf("data %d ,%d,%d,%d,%d \n",msg.temp.id,msg.temp.arrivaltime,msg.temp.runningtime,msg.temp.priority,msg.temp.memorysize);
         if(send_val == -1){
             perror("Errror in send");
         }
@@ -166,6 +185,7 @@ void sendData(Node *ptr)
     }
      if(!ptr){
         break;
+
     }
     pthread_mutex_unlock(&count_mutex);
     }
@@ -176,5 +196,7 @@ void clearResources(int signum)
     //TODO Clears all resources in case of interruption
     msgctl(msqid, IPC_RMID, (struct msqid_ds *) 0);
     printf("shared memory terminating!\n");
-    exit(0);
+    printf("Inturpted %d\n",getpid());
+
+   exit(0);
 }
